@@ -44,3 +44,66 @@ struct Cycle: Equatable, Sendable {
         flow != .none
     }
 }
+
+// MARK: - Cycle entity (persisted record)
+
+/// An estimated ovulation day, always carried *with* its confidence — never
+/// render one without the other (`docs/product/01-data-model.md`).
+struct OvulationEstimate: Equatable, Codable, Sendable {
+    let date: Date
+    let confidence: Double   // 0...1
+
+    init(date: Date, confidence: Double) {
+        self.date = date
+        self.confidence = min(max(confidence, 0), 1)
+    }
+}
+
+/// The fertile window as a range + confidence. Predicted days render ghost/dashed.
+struct FertileWindow: Equatable, Codable, Sendable {
+    let start: Date
+    let end: Date
+    let confidence: Double   // 0...1
+
+    init(start: Date, end: Date, confidence: Double) {
+        self.start = start
+        self.end = end
+        self.confidence = min(max(confidence, 0), 1)
+    }
+}
+
+/// The full `Cycle` entity from `docs/product/01-data-model.md` — derived and
+/// editable, one per menstrual cycle. Distinct from the lightweight `Cycle`
+/// math helper above (which the predictor/UI use for phase arithmetic); this is
+/// the persistable record the store will map to a `@Model` in Stage 3.
+struct CycleRecord: Equatable, Codable, Sendable, Identifiable {
+    let id: UUID
+    var startDate: Date
+    var endDate: Date?
+    var lengthDays: Int?
+    var periodLengthDays: Int?
+    var ovulationEstimate: OvulationEstimate?
+    var fertileWindow: FertileWindow?
+    /// Predicted cycles render as ghost/dashed and never as certainties.
+    var isPredicted: Bool
+
+    init(
+        id: UUID = UUID(),
+        startDate: Date,
+        endDate: Date? = nil,
+        lengthDays: Int? = nil,
+        periodLengthDays: Int? = nil,
+        ovulationEstimate: OvulationEstimate? = nil,
+        fertileWindow: FertileWindow? = nil,
+        isPredicted: Bool = false
+    ) {
+        self.id = id
+        self.startDate = startDate
+        self.endDate = endDate
+        self.lengthDays = lengthDays
+        self.periodLengthDays = periodLengthDays
+        self.ovulationEstimate = ovulationEstimate
+        self.fertileWindow = fertileWindow
+        self.isPredicted = isPredicted
+    }
+}
