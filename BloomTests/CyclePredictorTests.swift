@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import Bloom
 
@@ -35,5 +36,65 @@ struct CyclePredictorTests {
     func mostLikelyTracksAverage() {
         let p = CyclePredictor.predict(history: [30, 30, 30])
         #expect(p.mostLikelyDay == 30)
+    }
+
+    @Test("a perfectly regular history gives a tight (±1) band")
+    func regularHistoryTightBand() {
+        let p = CyclePredictor.predict(history: [28, 28, 28, 28])
+        #expect(p.bandWidthDays == 2)        // ±1 around the mean
+        #expect(p.earliestDay == 27 && p.latestDay == 29)
+    }
+
+    @Test("an irregular history widens the band")
+    func irregularHistoryWidensBand() {
+        let regular = CyclePredictor.predict(history: [28, 28, 28])
+        let irregular = CyclePredictor.predict(history: [21, 35, 28])
+        #expect(irregular.bandWidthDays > regular.bandWidthDays)
+    }
+
+    @Test("more data raises confidence for equally-regular histories")
+    func dataWeightRaisesConfidence() {
+        let sparse = CyclePredictor.predict(history: [28, 28])
+        let rich = CyclePredictor.predict(history: [28, 28, 28, 28, 28, 28])
+        #expect(rich.confidence > sparse.confidence)
+    }
+
+    @Test("a prediction always requires ghost styling — never a certainty")
+    func alwaysGhostStyled() {
+        #expect(CyclePredictor.predict(history: []).requiresGhostStyling)
+        #expect(CyclePredictor.predict(history: [28, 30, 27]).requiresGhostStyling)
+    }
+
+    // MARK: - Dated prediction
+
+    static let cal: Calendar = {
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = TimeZone(identifier: "UTC")!
+        return c
+    }()
+
+    @Test("nextPeriodPrediction maps the day-band onto real dates")
+    func datedPredictionWindow() {
+        let cal = Self.cal
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let now = start
+        let prediction = CyclePredictor.nextPeriodPrediction(
+            lastPeriodStart: start, history: [28, 28, 28], mode: .cycle, generatedAt: now, calendar: cal
+        )
+        let window = try! #require(prediction).nextPeriod
+        // Regular history → ±1 around day 28.
+        #expect(cal.dateComponents([.day], from: start, to: window.windowStart).day == 27)
+        #expect(cal.dateComponents([.day], from: start, to: window.windowEnd).day == 29)
+        #expect(window.confidence > 0 && window.confidence <= 0.95)
+    }
+
+    @Test("nextPeriodPrediction is nil for life stages without calendar prediction")
+    func noPredictionForUnsupportedModes() {
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        for mode in [LifeStageMode.pregnancy, .postpartum, .perimenopause] {
+            #expect(CyclePredictor.nextPeriodPrediction(
+                lastPeriodStart: start, history: [28, 28], mode: mode, generatedAt: start, calendar: Self.cal
+            ) == nil)
+        }
     }
 }
