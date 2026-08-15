@@ -1,0 +1,39 @@
+name: Claude Code Review
+
+# Automatically reviews every pull request. Requires the Claude GitHub App
+# installed on the repo and an ANTHROPIC_API_KEY repository secret.
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Claude review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request for the Bloom iOS app. Be concise and only flag
+            real, high-confidence issues — no nitpicking. Focus on:
+            - Correctness bugs, crashes, force-unwraps, retain cycles.
+            - Swift 6 concurrency / data races; SwiftData + CloudKit threading.
+            - HealthKit authorization misuse.
+            - PRIVACY/SHARING LEAKS (highest severity): any path where an un-shareable
+              field (sexual activity, contraception, weight, private notes) could reach
+              the partner-shared layer, where hiding is observably different from
+              not-logging, or where revoke/breakup fails to purge partner data.
+              See docs/research/03-partner-sharing-privacy.md.
+            - Missing accessibilityIdentifier on new interactive views (breaks UI automation).
+            Post findings as inline PR comments where possible.
+          claude_args: "--max-turns 20"

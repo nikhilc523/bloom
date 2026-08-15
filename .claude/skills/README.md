@@ -1,0 +1,39 @@
+# Bloom — iOS Delivery Skills
+
+Project-scoped Claude Code skills that let an AI agent **develop, test, bug-hunt, and validate the running app through its real UI**. Each lives in its own folder as `SKILL.md` and is auto-discovered by Claude Code. Grounded in current tooling (Aug 2026, Xcode 26 / Swift 6) — see `docs/` for the product research these encode.
+
+## The skills
+
+| Skill | What it does |
+|---|---|
+| **swiftui-developer** | Build features to Bloom's architecture + pink-glass design system |
+| **ios-build-run** | Build, install, launch on Simulator; logs; deep links; test-mode |
+| **ios-ui-automation** | ⭐ Agent drives the live app — tap/type/swipe, read a11y tree, screenshot, assert (idb + XcodeBuildMCP + ios-simulator-mcp + Maestro) |
+| **xcuitest-writer** | Checked-in XCUITest E2E flows for CI |
+| **swift-unit-tests** | Logic tests with Swift Testing (`import Testing`) |
+| **snapshot-testing** | Pixel + view-tree tests for the design system (SnapshotTesting, ViewInspector) |
+| **swift-bug-finder** | Hunt crashes, races, SwiftData/CloudKit/HealthKit + sharing-leak bugs |
+| **test-requirements** | Turn a spec into a test plan + mandatory privacy/safety cases |
+| **swift-lint-format** | SwiftLint + swift-format + Periphery |
+| **accessibility-audit** | VoiceOver/Dynamic Type/contrast + the identifiers automation needs |
+| **ios-release-validator** | Pre-ship go/no-go; blocking privacy/safety invariants; Apple review gates |
+
+⭐ = the headline capability you asked for: the AI actually operates and validates the app's UI.
+
+## How they chain (a feature, end to end)
+1. **test-requirements** — plan acceptance criteria + edge/privacy cases.
+2. **swiftui-developer** — implement to architecture + design system.
+3. **swift-unit-tests** / **snapshot-testing** / **xcuitest-writer** — cover it at the cheapest layer.
+4. **ios-build-run** → **ios-ui-automation** — build, then the agent drives the live UI and validates (light + dark).
+5. **swift-bug-finder** + **swift-lint-format** + **accessibility-audit** — quality gates over the diff.
+6. **ios-release-validator** — go/no-go before shipping.
+
+## One-time setup for live UI validation
+```bash
+brew install idb-companion          # engine for UI automation MCPs
+# create .mcp.json at repo root (Claude Code won't auto-write it) — snippet in ios-ui-automation/SKILL.md
+```
+Then approve the `XcodeBuildMCP` and `ios-simulator` servers when Claude Code prompts.
+
+## CI (add when the Xcode project exists)
+`xcodebuild test` on a `macos-26` GitHub Actions runner with `-enableCodeCoverage YES`; parse `xcrun xccov --json` to gate coverage. Full snippet lives in `swift-lint-format` / the build-plan doc (`docs/product/02-build-plan.md`). Not committed as a live workflow yet because there's no scheme to build.

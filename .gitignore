@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+
+# Xcode / build
+DerivedData/
+build/
+*.xcresult
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# XcodeGen generates the project — source of truth is project.yml
+Bloom.xcodeproj/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods / Carthage (unused, but ignore if added)
+Pods/
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Secrets — never commit
+*.env
+.env
+secrets.xcconfig
+
+# Snapshot test failure artifacts (keep __Snapshots__ references, ignore failures)
+**/__Snapshots__/**/*.failure.png
