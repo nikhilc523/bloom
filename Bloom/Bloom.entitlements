@@ -18,5 +18,14 @@
 	     Xcode rewrites it to `production` for a release/TestFlight build. -->
 	<key>aps-environment</key>
 	<string>development</string>
+	<!-- Stage 5 — HealthKit two-way sync with Apple Cycle Tracking. `background-delivery`
+	     lets external Health changes (Apple Watch, other apps) wake Bloom to ingest
+	     them. Requires the HealthKit capability on the App ID (Developer portal) and
+	     the target (Xcode picks it up under Automatic signing). HealthKit data is a
+	     separate source and is never written into the CloudKit-mirrored store (5.1.3). -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.background-delivery</key>
+	<true/>
 </dict>
 </plist>
