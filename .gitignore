@@ -43,3 +43,7 @@ secrets.xcconfig
 # These specs (product brief, clinical research, partner-sharing privacy strategy,
 # build plans, stage handoffs) stay on the developer's machine only.
 docs/
+
+# Design inspiration screenshots (third-party dribbble/X shots) — reference only,
+# kept LOCAL like docs/. The design DECISION lives in docs/design/DESIGN-DIRECTION.md.
+design/

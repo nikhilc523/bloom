@@ -30,11 +30,18 @@ jobs:
       - name: Build & test
         run: |
           set -o pipefail
-          # Pick whatever iPhone simulator the runner image actually ships —
-          # pinning a name (e.g. "iPhone 16") rots each time the image updates.
-          UDID=$(xcrun simctl list devices available | grep -E 'iPhone' \
+          # Stage 6 snapshot tests record their reference PNGs on iPhone 17 / iOS 26.
+          # Prefer that device so the pixel diff runs for real; fall back to whatever
+          # iPhone the runner ships (the snapshots self-skip off iOS 26 — see
+          # ComponentSnapshotTests — so a mismatched runner never reds CI).
+          UDID=$(xcrun simctl list devices available | grep -E 'iPhone 17( |$|\()' \
             | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' \
             | head -1)
+          if [ -z "$UDID" ]; then
+            UDID=$(xcrun simctl list devices available | grep -E 'iPhone' \
+              | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' \
+              | head -1)
+          fi
           echo "Using simulator UDID: $UDID"
           xcodebuild test \
             -project Bloom.xcodeproj \
