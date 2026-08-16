@@ -1,6 +1,9 @@
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
+
     @State private var cycleDay = 5
     private let cycleLength = 28
     @State private var showingLog = false
@@ -44,13 +47,38 @@ struct ContentView: View {
             .padding()
         }
         .sheet(isPresented: $showingLog) {
-            LogSheet { _ in
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                    loggedToday = true
-                }
+            LogSheet { flow in
+                persistTodaysFlow(flow)
                 showingLog = false
             }
         }
+        .onAppear(perform: refreshLoggedToday)
+    }
+
+    /// Persist today's flow through the repository so it survives relaunch.
+    /// (UI may read the wall clock — the purity rule applies to the engines, not here.)
+    private func persistTodaysFlow(_ flow: Flow) {
+        let repository = SwiftDataRepository(context: modelContext)
+        let today = Calendar.current.startOfDay(for: Date())
+        do {
+            var log = try repository.log(on: today) ?? DailyLog(date: today)
+            log.flow = flow
+            try repository.upsert(log)
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                loggedToday = true
+            }
+        } catch {
+            // Persistence failed — leave the badge off rather than fake success.
+            assertionFailure("Failed to persist daily log: \(error)")
+        }
+    }
+
+    /// Reflect persisted state on launch: badge shows if today already has a log.
+    private func refreshLoggedToday() {
+        let repository = SwiftDataRepository(context: modelContext)
+        let today = Calendar.current.startOfDay(for: Date())
+        let existing = (try? repository.log(on: today)) ?? nil
+        loggedToday = existing != nil
     }
 }
 
