@@ -25,7 +25,17 @@ struct BloomApp: App {
 
     var body: some Scene {
         WindowGroup {
+            #if DEBUG
+            // Dev-only design-system catalog, reachable ONLY when launched with
+            // `-designGallery` (and only in DEBUG builds). Never in the real app.
+            if CommandLine.arguments.contains("-designGallery") {
+                DesignGallery()
+            } else {
+                ContentView()
+            }
+            #else
             ContentView()
+            #endif
         }
         .modelContainer(container)
     }

@@ -31,17 +31,8 @@ struct CycleRing: View {
                 )
                 .rotationEffect(.degrees(-90))
 
-            VStack(spacing: 4) {
-                Text("Day")
-                    .font(.subheadline)
-                    .foregroundStyle(Bloom.Palette.mist)
-                Text("\(day)")
-                    .font(.system(size: 72, weight: .bold, design: .rounded))
-                    .foregroundStyle(Bloom.Palette.plumInk)
-                Text(phaseLabel)
-                    .font(.headline)
-                    .foregroundStyle(Bloom.Palette.deepRose)
-            }
+            HeroNumber(value: "\(day)", caption: phaseLabel, eyebrow: "Day")
+                .accessibilityHidden(true) // the ring exposes one combined a11y element
         }
         .frame(width: 240, height: 240)
         .accessibilityElement(children: .ignore)
