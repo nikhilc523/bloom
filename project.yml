@@ -12,8 +12,13 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
+    # Device builds (the Stage-4 two-phone sync test) must be signable, so we no
+    # longer force `CODE_SIGNING_ALLOWED: NO` here. CI/local simulator runs pass
+    # `CODE_SIGNING_ALLOWED=NO` on the xcodebuild command line and are unaffected.
+    # Set your Team in Xcode → Signing & Capabilities (Automatic signing) to build
+    # on device; DEVELOPMENT_TEAM stays empty in the committed spec on purpose.
     DEVELOPMENT_TEAM: ""
-    CODE_SIGNING_ALLOWED: "NO"
+    CODE_SIGN_STYLE: Automatic
 
 targets:
   Bloom:
