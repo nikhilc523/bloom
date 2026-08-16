@@ -28,6 +28,13 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         INFOPLIST_KEY_CFBundleDisplayName: Bloom
         TARGETED_DEVICE_FAMILY: "1"
+        # Stage 4 — CloudKit private-DB sync. Entitlements grant the iCloud
+        # container; the background mode lets silent CloudKit pushes wake the
+        # app to pull remote changes. Signing (team + provisioning that includes
+        # the iCloud container) is set in Xcode for device builds; CI builds with
+        # CODE_SIGNING_ALLOWED=NO, which skips entitlement application.
+        CODE_SIGN_ENTITLEMENTS: Bloom/Bloom.entitlements
+        INFOPLIST_KEY_UIBackgroundModes: remote-notification
 
   BloomTests:
     type: bundle.unit-test
