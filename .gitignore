@@ -38,3 +38,8 @@ secrets.xcconfig
 
 # Snapshot test failure artifacts (keep __Snapshots__ references, ignore failures)
 **/__Snapshots__/**/*.failure.png
+
+# Product/research docs — kept LOCAL, deliberately NOT published to the public remote.
+# These specs (product brief, clinical research, partner-sharing privacy strategy,
+# build plans, stage handoffs) stay on the developer's machine only.
+docs/

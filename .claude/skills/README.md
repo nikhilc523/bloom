@@ -18,6 +18,7 @@ Project-scoped Claude Code skills that let an AI agent **develop, test, bug-hunt
 | **accessibility-audit** | VoiceOver/Dynamic Type/contrast + the identifiers automation needs |
 | **ios-release-validator** | Pre-ship go/no-go; blocking privacy/safety invariants; Apple review gates |
 | **github-push** | 🔒 Mandatory pre-push gate — branch → local tests green → PR → green CI → merge; blocks secrets/privacy leaks. Required by `CLAUDE.md` before every push |
+| **stage-review** | 🤖 Per-stage adversarial "does it break?" review over the whole stage diff — HIGH-severity bugs, privacy leaks, data-model/migration integrity. Runs automatically on every PR via `.github/workflows/stage-review.yml`, or manually as `/stage-review` |
 
 ⭐ = the headline capability you asked for: the AI actually operates and validates the app's UI.
 🔒 = enforced on every push via the root `CLAUDE.md`.

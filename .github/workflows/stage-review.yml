@@ -1,0 +1,63 @@
+name: Stage Review
+
+# Automatic, per-stage adversarial review — runs like a PR review on every pull
+# request. Uses the project-scoped `stage-review` skill (.claude/skills/stage-review)
+# to hunt HIGH-severity bugs and "does this break the app?" regressions across the
+# whole stage diff, then posts a BLOCK / WARN / PASS verdict on the PR.
+#
+# Requires repo secret ANTHROPIC_API_KEY (Settings → Secrets and variables → Actions).
+# If the secret is absent the job is skipped (kept non-blocking so it never wedges CI).
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: stage-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stage-review:
+    name: Stage Review
+    runs-on: ubuntu-latest
+    # Skip cleanly on forks / when no API key is configured, so external PRs don't fail.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so the review can diff against origin/main
+
+      - name: Guard — API key present
+        id: guard
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "ANTHROPIC_API_KEY not set — skipping Stage Review."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Adversarial stage review
+        if: ${{ steps.guard.outputs.run == 'true' }}
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          track_progress: true
+          prompt: |
+            You are reviewing this pull request as Bloom's end-of-stage gate.
+            Use the project skill `stage-review` (.claude/skills/stage-review/SKILL.md)
+            and follow its procedure exactly.
+
+            Review the ENTIRE stage diff (git diff origin/main...HEAD), not a single
+            file. Hunt the HIGH-potential bugs and the ways this change breaks the app,
+            with concrete repros. Prioritise: privacy/sharing-leak invariants, crashes,
+            SwiftData+CloudKit data-model integrity and migrations, Swift 6 data races,
+            and prediction/flag-engine correctness.
+
+            Post ONE structured comment with the verdict (BLOCK | WARN | PASS) in the
+            exact format the skill specifies. BLOCK only on a real P0. PASS only after
+            actively checking — say what you verified.
