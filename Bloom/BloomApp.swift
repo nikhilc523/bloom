@@ -1,13 +1,25 @@
 import SwiftUI
+import SwiftData
 import UIKit
 
 @main
 struct BloomApp: App {
+    /// The SwiftData stack for the whole app. `-uiTesting` gets an isolated
+    /// in-memory store (deterministic, no disk/iCloud); everything else gets the
+    /// persistent, CloudKit-ready store (sync OFF until Stage 4).
+    private let container: ModelContainer
+
     init() {
-        if CommandLine.arguments.contains("-uiTesting") {
-            // Deterministic UI-test mode: in-memory state, no CloudKit/HealthKit.
-            // (Wire real in-memory ModelContainer here once SwiftData lands.)
+        let uiTesting = CommandLine.arguments.contains("-uiTesting")
+        if uiTesting {
             UIView.setAnimationsEnabled(false)
+        }
+        do {
+            container = try uiTesting ? BloomStore.inMemoryContainer() : BloomStore.container()
+        } catch {
+            // A store that can't open is unrecoverable — fail loud rather than
+            // silently drop to a throwaway store and lose her data.
+            fatalError("Failed to create Bloom ModelContainer: \(error)")
         }
     }
 
@@ -15,5 +27,6 @@ struct BloomApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(container)
     }
 }
