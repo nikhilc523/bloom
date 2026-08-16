@@ -40,6 +40,11 @@ targets:
         # CODE_SIGNING_ALLOWED=NO, which skips entitlement application.
         CODE_SIGN_ENTITLEMENTS: Bloom/Bloom.entitlements
         INFOPLIST_KEY_UIBackgroundModes: remote-notification
+        # Stage 5 — HealthKit. Both usage strings are mandatory: requesting
+        # authorization without them crashes the app. They surface in the iOS
+        # permission sheet, so phrase them for her, honestly.
+        INFOPLIST_KEY_NSHealthShareUsageDescription: "Bloom reads your Cycle Tracking data (period, fertility signs, basal body temperature) from Apple Health so your log stays in sync across your devices."
+        INFOPLIST_KEY_NSHealthUpdateUsageDescription: "Bloom saves the periods and cycle details you log into Apple Health, so Cycle Tracking and your other apps stay up to date."
 
   BloomTests:
     type: bundle.unit-test

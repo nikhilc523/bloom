@@ -9,6 +9,11 @@ struct ContentView: View {
     @State private var showingLog = false
     @State private var loggedToday = false
 
+    /// The HealthKit two-way sync (Stage 5). Built once on appear from the main
+    /// context; nil until then and a no-op wherever HealthKit is unavailable
+    /// (Simulator / iPad / denied), so nothing here depends on a device.
+    @State private var healthKit: HealthKitSync?
+
     var body: some View {
         ZStack {
             Bloom.Background()
@@ -53,12 +58,14 @@ struct ContentView: View {
             }
         }
         .onAppear(perform: refreshLoggedToday)
+        .task { await startHealthKit() }
     }
 
-    /// Persist today's flow through the repository so it survives relaunch.
+    /// Persist today's flow through the repository so it survives relaunch, and
+    /// (on device) mirror it to Apple Health via the HealthKit-mirroring wrapper.
     /// (UI may read the wall clock — the purity rule applies to the engines, not here.)
     private func persistTodaysFlow(_ flow: Flow) {
-        let repository = SwiftDataRepository(context: modelContext)
+        let repository = logRepository()
         let today = Calendar.current.startOfDay(for: Date())
         do {
             var log = try repository.log(on: today) ?? DailyLog(date: today)
@@ -71,6 +78,25 @@ struct ContentView: View {
             // Persistence failed — leave the badge off rather than fake success.
             assertionFailure("Failed to persist daily log: \(error)")
         }
+    }
+
+    /// The write path: mirror to HealthKit when the sync is live, otherwise the
+    /// plain store. Reads/refresh can use the plain repository directly.
+    private func logRepository() -> any LogRepository {
+        let base = SwiftDataRepository(context: modelContext)
+        guard let healthKit else { return base }
+        return HealthKitMirroringLogRepository(base: base, sync: healthKit)
+    }
+
+    /// Build the HealthKit sync once, request authorization, and begin observing
+    /// external Health changes. No-ops off-device; safe to call every appear.
+    private func startHealthKit() async {
+        guard healthKit == nil else { return }
+        let base = SwiftDataRepository(context: modelContext)
+        let sync = HealthKitSync(logRepository: base)
+        healthKit = sync
+        await sync.requestAuthorization()
+        await sync.startObserving()
     }
 
     /// Reflect persisted state on launch: badge shows if today already has a log.
